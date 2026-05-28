@@ -18,6 +18,7 @@ struct __attribute__((packed)) GimbalToVision
 {
   uint8_t head[2] = {'S', 'P'};
   uint8_t mode;  // 0: 空闲, 1: 自瞄, 2: 小符, 3: 大符
+  uint8_t aim_color; // 自瞄识别目标色 0:Blue  1:Red
   float q[4];    // wxyz顺序
   float yaw;
   float yaw_vel;
