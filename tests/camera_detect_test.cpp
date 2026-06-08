@@ -34,6 +34,9 @@ int main(int argc, char * argv[])
 
   std::chrono::steady_clock::time_point timestamp;
 
+  int frame_count = 0;
+  double total_dt = 0.0;
+
   while (!exiter.exit()) {
     cv::Mat img;
     std::list<auto_aim::Armor> armors;
@@ -51,7 +54,15 @@ int main(int argc, char * argv[])
 
     auto now = std::chrono::steady_clock::now();
     auto dt = tools::delta_time(now, last);
-    tools::logger()->info("{:.2f} fps", 1 / dt);
+
+    frame_count++;
+    total_dt += dt;
+
+    if (frame_count >= 10) {
+      tools::logger()->info("{:.2f} fps", 10 / total_dt);
+      frame_count = 0;
+      total_dt = 0.0;
+    }
 
     auto key = cv::waitKey(33);
     if (key == 'q') break;
