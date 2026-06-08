@@ -98,6 +98,7 @@ private:
     queue_{1000};
 
   bool read(uint8_t * buffer, size_t size);
+  void read_thread_fsm_safe();
   void read_thread();
   void reconnect();
 };
