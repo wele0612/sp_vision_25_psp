@@ -3,8 +3,7 @@
 #include <opencv2/opencv.hpp>
 #include <thread>
 
-#include "io/cboard.hpp"
-#include "io/command.hpp"
+#include "io/gimbal/gimbal.hpp"
 #include "tools/exiter.hpp"
 #include "tools/logger.hpp"
 #include "tools/math_tools.hpp"
@@ -52,7 +51,7 @@ int main(int argc, char * argv[])
   tools::Exiter exiter;
   tools::Plotter plotter;
 
-  io::CBoard cboard(config_path);
+  io::Gimbal gimbal(config_path);
 
   auto init_angle = 0;
   double slice = circle * 100;  //切片数=周期*帧率
@@ -64,12 +63,13 @@ int main(int argc, char * argv[])
   double error = 0;
   int count = 0;
 
-  io::Command init_command{1, 0, 0, 0};
-  cboard.send(init_command);
+  gimbal.send(true, false, 0, 0, 0, 0, 0, 0);
   std::this_thread::sleep_for(5s);  //等待云台归零
 
-  io::Command command{0};
-  io::Command last_command{0};
+  float yaw_cmd = 0;
+  float pitch_cmd = 0;
+  float last_yaw_cmd = 0;
+  float last_pitch_cmd = 0;
 
   double t = 0;
   auto last_t = t;
@@ -83,41 +83,41 @@ int main(int argc, char * argv[])
 
     std::this_thread::sleep_for(1ms);
 
-    Eigen::Quaterniond q = cboard.imu_at(timestamp);
-
-    Eigen::Vector3d eulers = tools::eulers(q, 2, 1, 0);
+    auto gs = gimbal.state();
 
     if (signal_mode == "triangle_wave") {
       if (count == slice) {
         cmd_angle = init_angle;
-        command = {1, 0, 0, 0};
+        yaw_cmd = 0;
+        pitch_cmd = 0;
         if (axis_index == 0)
-          command.yaw = cmd_angle / 57.3;
+          yaw_cmd = cmd_angle / 57.3;
         else
-          command.pitch = cmd_angle / 57.3;
+          pitch_cmd = cmd_angle / 57.3;
         count = 0;
 
       } else {
         cmd_angle += dangle;
         if (axis_index == 0)
-          command.yaw = cmd_angle / 57.3;
+          yaw_cmd = cmd_angle / 57.3;
         else
-          command.pitch = cmd_angle / 57.3;
+          pitch_cmd = cmd_angle / 57.3;
         count++;
       }
 
-      cboard.send(command);
+      gimbal.send(true, false, yaw_cmd, 0, 0, pitch_cmd, 0, 0);
       if (axis_index == 0) {
-        data["cmd_yaw"] = command.yaw * 57.3;
-        data["last_cmd_yaw"] = last_command.yaw * 57.3;
-        data["gimbal_yaw"] = eulers[0] * 57.3;
+        data["cmd_yaw"] = yaw_cmd * 57.3;
+        data["last_cmd_yaw"] = last_yaw_cmd * 57.3;
+        data["gimbal_yaw"] = gs.yaw * 57.3;
       } else {
-        data["cmd_pitch"] = command.pitch * 57.3;
-        data["last_cmd_pitch"] = last_command.pitch * 57.3;
-        data["gimbal_pitch"] = eulers[1] * 57.3;
+        data["cmd_pitch"] = pitch_cmd * 57.3;
+        data["last_cmd_pitch"] = last_pitch_cmd * 57.3;
+        data["gimbal_pitch"] = gs.pitch * 57.3;
       }
       data["t"] = tools::delta_time(std::chrono::steady_clock::now(), t0);
-      last_command = command;
+      last_yaw_cmd = yaw_cmd;
+      last_pitch_cmd = pitch_cmd;
       plotter.plot(data);
       std::this_thread::sleep_for(8ms);  //模拟自瞄100fps
     }
@@ -127,36 +127,34 @@ int main(int argc, char * argv[])
         cmd_angle += delta_angle;
         count = 0;
       }
-      command = {1, 0, tools::limit_rad(cmd_angle / 57.3), 0};
+      yaw_cmd = tools::limit_rad(cmd_angle / 57.3);
       count++;
 
-      cboard.send(command);
-      data["cmd_yaw"] = command.yaw * 57.3;
-      data["last_cmd_yaw"] = last_command.yaw * 57.3;
-      data["gimbal_yaw"] = eulers[0] * 57.3;
-      last_command = command;
+      gimbal.send(true, false, yaw_cmd, 0, 0, 0, 0, 0);
+      data["cmd_yaw"] = yaw_cmd * 57.3;
+      data["last_cmd_yaw"] = last_yaw_cmd * 57.3;
+      data["gimbal_yaw"] = gs.yaw * 57.3;
+      last_yaw_cmd = yaw_cmd;
       plotter.plot(data);
       std::this_thread::sleep_for(8ms);  //模拟自瞄100fps
     }
 
     else if (signal_mode == "circle") {
       std::cout << "t: " << t << std::endl;
-      command.yaw = yaw_cal(t) / 57.3;
-      command.pitch = pitch_cal(t) / 57.3;
-      command.control = 1;
-      command.shoot = 0;
+      yaw_cmd = yaw_cal(t) / 57.3;
+      pitch_cmd = pitch_cal(t) / 57.3;
       t += dt;
       if (t - last_t > 2) {
         t += 2.4;
         last_t = t;
       }
-      cboard.send(command);
+      gimbal.send(true, false, yaw_cmd, 0, 0, pitch_cmd, 0, 0);
 
       data["t"] = t;
-      data["cmd_yaw"] = command.yaw * 57.3;
-      data["cmd_pitch"] = command.pitch * 57.3;
-      data["gimbal_yaw"] = eulers[0] * 57.3;
-      data["gimbal_pitch"] = eulers[1] * 57.3;
+      data["cmd_yaw"] = yaw_cmd * 57.3;
+      data["cmd_pitch"] = pitch_cmd * 57.3;
+      data["gimbal_yaw"] = gs.yaw * 57.3;
+      data["gimbal_pitch"] = gs.pitch * 57.3;
       plotter.plot(data);
       std::this_thread::sleep_for(9ms);
     }
