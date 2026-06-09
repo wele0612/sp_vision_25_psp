@@ -287,8 +287,8 @@ void Gimbal::read_thread_fsm_safe()
         tools::logger()->debug("[Gimbal] CRC16 check failed.");
         state = State::IDLE;
         continue;
-      }else{
-        tools::logger()->debug("[Gimbal] CRC16 check success.");
+      // }else{
+      //   tools::logger()->debug("[Gimbal] CRC16 check success.");
       }
 
       error_count = 0;

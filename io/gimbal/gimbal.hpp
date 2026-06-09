@@ -35,12 +35,19 @@ struct __attribute__((packed)) VisionToGimbal
 {
   uint8_t head[2] = {'S', 'P'};
   uint8_t mode;  // 0: 不控制, 1: 控制云台但不开火，2: 控制云台且开火
+  uint8_t is_self_color_red;
+
   float yaw;
   float yaw_vel;
   float yaw_acc;
   float pitch;
   float pitch_vel;
   float pitch_acc;
+
+  float forward_vel;
+  float leftward_vel;
+  uint8_t spintop_level;
+  
   uint16_t crc16;
 };
 
