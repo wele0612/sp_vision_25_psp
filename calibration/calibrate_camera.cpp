@@ -32,7 +32,7 @@ void load(
   auto pattern_cols = yaml["pattern_cols"].as<int>();
   auto pattern_rows = yaml["pattern_rows"].as<int>();
   auto center_distance_mm = yaml["center_distance_mm"].as<double>();
-  cv::Size pattern_size(pattern_cols, pattern_rows);
+  cv::Size pattern_size(pattern_cols - 1, pattern_rows - 1);  // 棋盘格内角点数 = 格子数 - 1
 
   for (int i = 1; true; i++) {
     // 读取图片
@@ -45,7 +45,7 @@ void load(
 
     // 识别标定板
     std::vector<cv::Point2f> centers_2d;
-    auto success = cv::findCirclesGrid(img, pattern_size, centers_2d, cv::CALIB_CB_SYMMETRIC_GRID);
+    auto success = cv::findChessboardCorners(img, pattern_size, centers_2d);
 
     // 显示识别结果
     auto drawing = img.clone();

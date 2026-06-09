@@ -54,11 +54,11 @@
 
 ## 2. 标定工具（calibration/）
 
-标定工具用于相机内参标定、手眼标定以及录制视频的切割。标定流程依赖于对称圆点标定板（默认 10 列 × 7 行，圆心距 40mm）。
+标定工具用于相机内参标定、手眼标定以及录制视频的切割。标定流程依赖于棋盘格标定板（默认 12 列 × 9 行，格子边长 5 mm）。
 
 | 可执行文件 | 作用 |
 |-----------|------|
-| `capture` | **标定数据采集程序**。连接工业相机和 CBoard，实时显示标定板识别结果，按 `s` 保存当前图像及对应 IMU 四元数，按 `q` 退出。 |
+| `capture` | **标定数据采集程序**。连接工业相机和 Gimbal（UART 串口），实时显示标定板识别结果，按 `s` 保存当前图像及对应 IMU 四元数，按 `q` 退出。 |
 | `calibrate_camera` | **相机内参标定程序**。读取采集的图像序列，使用 OpenCV `calibrateCamera` 计算相机内参矩阵和畸变系数。 |
 | `calibrate_handeye` | **手眼标定程序**。读取图像及对应四元数，计算相机相对于云台坐标系的旋转和平移 `R_camera2gimbal`、`t_camera2gimbal`。 |
 | `calibrate_robotworld_handeye` | **RobotWorld 手眼标定程序**。在标定相机-云台关系的同时，计算标定板相对于世界坐标系的位置。 |
@@ -70,8 +70,8 @@
 
 **功能**：
 - 打开工业相机（海康/迈德威视），读取实时图像；
-- 通过 CAN 总线获取 CBoard 的 IMU 绝对四元数；
-- 实时检测对称圆点标定板，显示识别结果和 IMU 欧拉角；
+- 通过 UART 串口获取 Gimbal 的 IMU 绝对四元数；
+- 实时检测棋盘格标定板，显示识别结果和 IMU 欧拉角；
 - 按 `s` 保存当前原始图像和四元数到指定文件夹；
 - 按 `q` 退出程序。
 
@@ -83,7 +83,7 @@
 
 | 参数 | 默认值 | 说明 |
 |-----|--------|------|
-| `<config-path>` | `configs/calibration.yaml` | YAML 配置文件路径，包含相机参数、CAN ID 等 |
+| `<config-path>` | `configs/calibration.yaml` | YAML 配置文件路径，包含相机参数、串口参数等 |
 | `-o` | `assets/img_with_q` | 输出文件夹路径 |
 
 **输出文件格式**：
@@ -105,7 +105,7 @@
 
 **功能**：
 - 读取采集的图像序列（`1.jpg`、`2.jpg` ...）；
-- 使用 `cv::findCirclesGrid` 检测对称圆点标定板；
+- 使用 `cv::findChessboardCorners` 检测棋盘格标定板；
 - 调用 `cv::calibrateCamera` 计算相机内参矩阵 `camera_matrix` 和畸变系数 `distort_coeffs`；
 - 计算重投影误差并输出 YAML 格式结果。
 
@@ -123,9 +123,9 @@
 **配置文件示例**（`configs/calibration.yaml`）：
 
 ```yaml
-pattern_cols: 10        # 标定板列数
-pattern_rows: 7         # 标定板行数
-center_distance_mm: 40  # 圆心距（mm）
+pattern_cols: 12        # 棋盘格列数（格子数）
+pattern_rows: 9         # 棋盘格行数（格子数）
+center_distance_mm: 5   # 格子边长（mm）
 ```
 
 **输出示例**：
@@ -310,7 +310,7 @@ t_camera2gimbal: [...]
 
 ## 附录：标定完整流程建议
 
-1. **准备标定板**：打印或购买对称圆点标定板（10×7，圆心距 40mm），固定于平整墙面；
+1. **准备标定板**：打印或购买棋盘格标定板（12×9，格子边长 5 mm），固定于平整墙面；
 2. **采集数据**：
    ```bash
    ./build/capture configs/calibration.yaml -o=assets/img_with_q

@@ -304,9 +304,9 @@
 
 | 参数名 | 类型 | 配置单位 | 说明 |
 |--------|------|----------|------|
-| `pattern_cols` | int | - | 标定板图案列数（圆点数量） |
-| `pattern_rows` | int | - | 标定板图案行数（圆点数量） |
-| `center_distance_mm` | double | mm | 标定板上相邻圆心之间的距离 |
+| `pattern_cols` | int | - | 棋盘格列数（格子数） |
+| `pattern_rows` | int | - | 棋盘格行数（格子数） |
+| `center_distance_mm` | double | mm | 棋盘格相邻角点之间的距离（即格子边长） |
 
 ---
 

@@ -1,16 +1,19 @@
-pattern_cols: 10
-pattern_rows: 7
-center_distance_mm: 40
+pattern_cols: 12        # 棋盘格列数（格子数）
+pattern_rows: 9         # 棋盘格行数（格子数）
+center_distance_mm: 5   # 格子边长（mm）
 
 R_gimbal2imubody: [1, 0, 0, 0, 1, 0,  0, 0, 1]
 
 camera_name: "hikrobot"
-exposure_ms: 3
+exposure_ms: 5
 gain: 10.0
 vid_pid: "2bdf:0001"
 
-#####-----cboard参数-----#####
-quaternion_canid: 0x01
-bullet_speed_canid: 0x110
-send_canid: 0xff
-can_interface: "can0"
+# Gimbal 串口参数
+com_port: "/dev/ttyUSB0"
+baudrate: 921600
+timeout_ms: 5
+
+# 重投影误差: 0.4054px
+camera_matrix: [1821.8294992320718, 0, 722.67651762007358, 0, 1821.0411048063665, 541.46067561798407, 0, 0, 1]
+distort_coeffs: [-0.089609994177697466, 0.20380526702963667, 6.2378683360897754e-05, 0.00081764484515961099, 0]
