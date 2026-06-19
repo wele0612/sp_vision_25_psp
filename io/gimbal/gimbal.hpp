@@ -89,6 +89,10 @@ public:
     bool control, bool fire, float yaw, float yaw_vel, float yaw_acc, float pitch, float pitch_vel,
     float pitch_acc);
 
+  void send(
+    bool control, bool fire, float yaw, float yaw_vel, float yaw_acc, float pitch, float pitch_vel,
+    float pitch_acc, float forward_vel, float leftward_vel, uint8_t spintop_level);
+
   void send(io::VisionToGimbal VisionToGimbal);
 
 private:

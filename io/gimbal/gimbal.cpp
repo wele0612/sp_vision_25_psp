@@ -204,6 +204,30 @@ void Gimbal::send(
   }
 }
 
+void Gimbal::send(
+  bool control, bool fire, float yaw, float yaw_vel, float yaw_acc, float pitch, float pitch_vel,
+  float pitch_acc, float forward_vel, float leftward_vel, uint8_t spintop_level)
+{
+  tx_data_.mode = control ? (fire ? 2 : 1) : 0;
+  tx_data_.yaw = yaw;
+  tx_data_.yaw_vel = yaw_vel;
+  tx_data_.yaw_acc = yaw_acc;
+  tx_data_.pitch = pitch;
+  tx_data_.pitch_vel = pitch_vel;
+  tx_data_.pitch_acc = pitch_acc;
+  tx_data_.forward_vel = forward_vel;
+  tx_data_.leftward_vel = leftward_vel;
+  tx_data_.spintop_level = spintop_level;
+  tx_data_.crc16 = tools::get_crc16(
+    reinterpret_cast<uint8_t *>(&tx_data_), sizeof(tx_data_) - sizeof(tx_data_.crc16));
+
+  try {
+    serial_.write(reinterpret_cast<uint8_t *>(&tx_data_), sizeof(tx_data_));
+  } catch (const std::exception & e) {
+    tools::logger()->warn("[Gimbal] Failed to write serial: {}", e.what());
+  }
+}
+
 bool Gimbal::read(uint8_t * buffer, size_t size)
 {
   try {

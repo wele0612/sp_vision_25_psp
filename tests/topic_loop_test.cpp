@@ -1,4 +1,4 @@
-#include <rclcpp/rclcpp.hpp>
+#include <geometry_msgs/msg/twist.hpp>
 #include <thread>
 
 #include "io/ros2/ros2.hpp"
@@ -9,26 +9,24 @@ int main(int argc, char ** argv)
 {
   tools::Exiter exiter;
   io::ROS2 ros2;
-  rclcpp::Clock clock;
-  auto string_publisher =
-    ros2.create_publisher<sp_msgs::msg::EnemyStatusMsg>("temp_node", "enemy_status", 10);
+  auto twist_publisher = ros2.create_publisher<geometry_msgs::msg::Twist>(
+    "temp_node", "/cmd_vel_smoothed", 10);
 
   int i = 0;
   while (!exiter.exit()) {
-    sp_msgs::msg::EnemyStatusMsg msg;
-    msg.invincible_enemy_ids = {1, 2, 3};
-    msg.timestamp = clock.now();
-    string_publisher->publish(msg);
-    RCLCPP_INFO(
-      rclcpp::get_logger("msg send timestamp is"), "msg.timestamp: %d.%09u", msg.timestamp.sec,
-      msg.timestamp.nanosec);
+    geometry_msgs::msg::Twist msg;
+    msg.linear.x = 1.0F;
+    msg.linear.y = -0.5F;
+    twist_publisher->publish(msg);
 
     i++;
     std::this_thread::sleep_for(std::chrono::microseconds(5));
 
     if (i % 3 == 0) {
-      auto x = ros2.subscribe_enemy_status();
-      // tools::logger()->info("invincible enemy ids size is{}", x.size());
+      const auto twist = ros2.subscribe_twist();
+      if (twist.size() == 2) {
+        tools::logger()->info("linear.x: {}, linear.y: {}", twist[0], twist[1]);
+      }
     }
 
     std::this_thread::sleep_for(std::chrono::seconds(1));

@@ -1,4 +1,5 @@
 #include "io/gimbal/gimbal.hpp"
+#include "io/ros2/ros2.hpp"
 
 #include <chrono>
 #include <opencv2/opencv.hpp>
@@ -30,6 +31,7 @@ int main(int argc, char * argv[])
   tools::Plotter plotter;
 
   io::Gimbal gimbal(config_path);
+  io::ROS2 ros2;
 
   auto t0 = std::chrono::steady_clock::now();
   auto last_mode = gimbal.mode();
@@ -39,6 +41,9 @@ int main(int argc, char * argv[])
   auto fire_count = 0;
   auto fire_stamp = std::chrono::steady_clock::now();
   auto first_fired = false;
+
+  float forward_vel = 0;
+  float leftward_vel = 0;
 
   while (!exiter.exit()) {
     auto mode = gimbal.mode();
@@ -74,7 +79,17 @@ int main(int argc, char * argv[])
     }
     fire_count++;
 
-    gimbal.send(true, test_fire && fire, 1, 0, 0, 0, 0, 0);
+    // read twist from ros2
+    auto twist = ros2.subscribe_twist();
+    if (twist.size() == 2) {
+      forward_vel = twist[0];
+      leftward_vel = twist[1];
+    } else {
+      forward_vel = 0;
+      leftward_vel = 0;
+    }
+
+    gimbal.send(true, test_fire && fire, 1, 0, 0, 0, 0, 0, forward_vel, leftward_vel, 0);
 
     nlohmann::json data;
     data["q_yaw"] = ypr[0];
@@ -88,6 +103,8 @@ int main(int argc, char * argv[])
     data["fired"] = fired ? 1 : 0;
     data["fire"] = test_fire && fire ? 1 : 0;
     data["t"] = tools::delta_time(t, t0);
+    data["forward_vel"] = forward_vel;
+    data["leftward_vel"] = leftward_vel;
     plotter.plot(data);
 
     std::this_thread::sleep_for(9ms);
