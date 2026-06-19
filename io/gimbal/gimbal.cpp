@@ -303,6 +303,7 @@ void Gimbal::read_thread_fsm_safe()
       state_.pitch_vel = rx_data_.pitch_vel;
       state_.bullet_speed = rx_data_.bullet_speed;
       state_.bullet_count = rx_data_.bullet_count;
+      state_.is_enemy_red = (rx_data_.aim_color == 1);
 
       switch (rx_data_.mode) {
         case 0:
@@ -378,6 +379,7 @@ void Gimbal::read_thread()
     state_.pitch_vel = rx_data_.pitch_vel;
     state_.bullet_speed = rx_data_.bullet_speed;
     state_.bullet_count = rx_data_.bullet_count;
+    state_.is_enemy_red = (rx_data_.aim_color == 1);
 
     switch (rx_data_.mode) {
       case 0:

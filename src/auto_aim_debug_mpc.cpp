@@ -12,6 +12,7 @@
 #include "tasks/auto_aim/solver.hpp"
 #include "tasks/auto_aim/tracker.hpp"
 #include "tasks/auto_aim/yolo.hpp"
+#include "tasks/auto_aim/detector.hpp"
 #include "tools/exiter.hpp"
 #include "tools/img_tools.hpp"
 #include "tools/logger.hpp"
@@ -41,6 +42,7 @@ int main(int argc, char * argv[])
   io::Camera camera(config_path);
 
   auto_aim::YOLO yolo(config_path, true);
+  auto_aim::Detector detector(config_path, true);
   auto_aim::Solver solver(config_path);
   auto_aim::Tracker tracker(config_path, solver);
   auto_aim::Planner planner(config_path);
@@ -52,10 +54,22 @@ int main(int argc, char * argv[])
   auto plan_thread = std::thread([&]() {
     auto t0 = std::chrono::steady_clock::now();
     uint16_t last_bullet_count = 0;
+    int plan_frame_count = 0;
+    auto plan_last_time = std::chrono::steady_clock::now();
 
     while (!quit) {
       auto target = target_queue.front();
       auto gs = gimbal.state();
+
+      // 如果云台状态中的敌方颜色与当前跟踪器使用的不一致，进行校正
+      auto expected_enemy_color = gs.is_enemy_red ? auto_aim::Color::red : auto_aim::Color::blue;
+      if (tracker.enemy_color() != expected_enemy_color) {
+        tracker.set_enemy_color(expected_enemy_color);
+        tools::logger()->info(
+          "[plan_thread] Correct enemy color to {} (from gimbal state)",
+          auto_aim::COLORS[expected_enemy_color]);
+      }
+
       auto plan = planner.plan(target, gs.bullet_speed);
 
       gimbal.send(
@@ -87,6 +101,8 @@ int main(int argc, char * argv[])
       data["fire"] = plan.fire ? 1 : 0;
       data["fired"] = fired ? 1 : 0;
 
+      data["ammo_speed"] = gs.bullet_speed;
+
       if (target.has_value()) {
         data["target_z"] = target->ekf_x()[4];   //z
         data["target_vz"] = target->ekf_x()[5];  //vz
@@ -100,24 +116,53 @@ int main(int argc, char * argv[])
 
       plotter.plot(data);
 
-      std::this_thread::sleep_for(10ms);
+      plan_frame_count++;
+      if (plan_frame_count % 100 == 0) {
+        auto now = std::chrono::steady_clock::now();
+        auto dt = tools::delta_time(now, plan_last_time);
+        auto fps = 100.0 / dt;
+        tools::logger()->info("[plan_thread] FPS: {:.2f}", fps);
+        plan_last_time = now;
+      }
+
+      std::this_thread::sleep_for(3ms);
     }
   });
 
   cv::Mat img;
   std::chrono::steady_clock::time_point t;
+  int main_frame_count = 0;
+  auto main_last_time = std::chrono::steady_clock::now();
+
+  auto ms = [](auto a, auto b) -> double {
+    return std::chrono::duration<double, std::milli>(b - a).count();
+  };
 
   while (!exiter.exit()) {
+    auto loop_start = std::chrono::steady_clock::now();
+
+    auto t0 = std::chrono::steady_clock::now();
     camera.read(img, t);
+    auto t1 = std::chrono::steady_clock::now();
+
     auto q = gimbal.q(t);
+    auto t2 = std::chrono::steady_clock::now();
 
     solver.set_R_gimbal2world(q);
+    auto t3 = std::chrono::steady_clock::now();
+
     auto armors = yolo.detect(img);
+    // auto armors = detector.detect(img, main_frame_count);
+    auto t4 = std::chrono::steady_clock::now();
+
     auto targets = tracker.track(armors, t);
+    auto t5 = std::chrono::steady_clock::now();
+
     if (!targets.empty())
       target_queue.push(targets.front());
     else
       target_queue.push(std::nullopt);
+    auto t6 = std::chrono::steady_clock::now();
 
     if (!targets.empty()) {
       auto target = targets.front();
@@ -135,11 +180,29 @@ int main(int argc, char * argv[])
         solver.reproject_armor(aim_xyza.head(3), aim_xyza[3], target.armor_type, target.name);
       tools::draw_points(img, image_points, {0, 0, 255});
     }
+    auto t7 = std::chrono::steady_clock::now();
 
-    cv::resize(img, img, {}, 0.5, 0.5);  // 显示时缩小图片尺寸
-    cv::imshow("reprojection", img);
+    // cv::resize(img, img, {}, 0.5, 0.5);  // 显示时缩小图片尺寸
+    // cv::imshow("reprojection", img);
     auto key = cv::waitKey(1);
+    auto t8 = std::chrono::steady_clock::now();
     if (key == 'q') break;
+
+    
+    main_frame_count++;
+    if (main_frame_count % 50 == 0) {
+      tools::logger()->info(
+      "[Timing] read:{:.2f} q:{:.2f} setR:{:.2f} detect:{:.2f} track:{:.2f} push:{:.2f} viz:{:.2f} show:{:.2f} total:{:.2f} ms",
+      ms(t0, t1), ms(t1, t2), ms(t2, t3), ms(t3, t4), ms(t4, t5),
+      ms(t5, t6), ms(t6, t7), ms(t7, t8), ms(loop_start, t8));
+
+
+      auto now = std::chrono::steady_clock::now();
+      auto dt = tools::delta_time(now, main_last_time);
+      auto fps = 50.0 / dt;
+      tools::logger()->info("[main_thread] FPS: {:.2f}", fps);
+      main_last_time = now;
+    }
   }
 
   quit = true;

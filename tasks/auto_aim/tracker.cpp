@@ -19,7 +19,7 @@ Tracker::Tracker(const std::string & config_path, Solver & solver)
   omni_target_priority_{ArmorPriority::fifth}
 {
   auto yaml = YAML::LoadFile(config_path);
-  enemy_color_ = (yaml["enemy_color"].as<std::string>() == "red") ? Color::red : Color::blue;
+  enemy_color_.store((yaml["enemy_color"].as<std::string>() == "red") ? Color::red : Color::blue);
   min_detect_count_ = yaml["min_detect_count"].as<int>();
   max_temp_lost_count_ = yaml["max_temp_lost_count"].as<int>();
   outpost_max_temp_lost_count_ = yaml["outpost_max_temp_lost_count"].as<int>();
@@ -27,6 +27,10 @@ Tracker::Tracker(const std::string & config_path, Solver & solver)
 }
 
 std::string Tracker::state() const { return state_; }
+
+Color Tracker::enemy_color() const { return enemy_color_.load(); }
+
+void Tracker::set_enemy_color(Color color) { enemy_color_.store(color); }
 
 std::list<Target> Tracker::track(
   std::list<Armor> & armors, std::chrono::steady_clock::time_point t, bool use_enemy_color)
@@ -40,7 +44,7 @@ std::list<Target> Tracker::track(
     state_ = "lost";
   }
   // 过滤掉非我方装甲板
-  armors.remove_if([&](const auto_aim::Armor & a) { return a.color != enemy_color_; });
+  armors.remove_if([&](const auto_aim::Armor & a) { return a.color != enemy_color_.load(); });
 
   // 过滤前哨站顶部装甲板
   // armors.remove_if([this](const auto_aim::Armor & a) {

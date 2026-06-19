@@ -2,6 +2,7 @@
 #define AUTO_AIM__TRACKER_HPP
 
 #include <Eigen/Dense>
+#include <atomic>
 #include <chrono>
 #include <list>
 #include <string>
@@ -21,6 +22,9 @@ public:
 
   std::string state() const;
 
+  Color enemy_color() const;
+  void set_enemy_color(Color color);
+
   std::list<Target> track(
     std::list<Armor> & armors, std::chrono::steady_clock::time_point t,
     bool use_enemy_color = true);
@@ -31,7 +35,7 @@ public:
 
 private:
   Solver & solver_;
-  Color enemy_color_;
+  std::atomic<Color> enemy_color_;
   int min_detect_count_;
   int max_temp_lost_count_;
   int detect_count_;

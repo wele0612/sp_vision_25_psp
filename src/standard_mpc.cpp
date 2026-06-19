@@ -10,6 +10,7 @@
 #include "tasks/auto_aim/shooter.hpp"
 #include "tasks/auto_aim/solver.hpp"
 #include "tasks/auto_aim/tracker.hpp"
+#include "tasks/auto_aim/detector.hpp"
 #include "tasks/auto_buff/buff_aimer.hpp"
 #include "tasks/auto_buff/buff_detector.hpp"
 #include "tasks/auto_buff/buff_solver.hpp"
@@ -45,6 +46,7 @@ int main(int argc, char * argv[])
   io::Camera camera(config_path);
 
   auto_aim::YOLO yolo(config_path, true);
+  auto_aim::Detector detector(config_path, true);
   auto_aim::Solver solver(config_path);
   auto_aim::Tracker tracker(config_path, solver);
   auto_aim::Planner planner(config_path);
@@ -52,11 +54,11 @@ int main(int argc, char * argv[])
   tools::ThreadSafeQueue<std::optional<auto_aim::Target>, true> target_queue(1);
   target_queue.push(std::nullopt);
 
-  auto_buff::Buff_Detector buff_detector(config_path);
-  auto_buff::Solver buff_solver(config_path);
-  auto_buff::SmallTarget buff_small_target;
-  auto_buff::BigTarget buff_big_target;
-  auto_buff::Aimer buff_aimer(config_path);
+  // auto_buff::Buff_Detector buff_detector(config_path);
+  // auto_buff::Solver buff_solver(config_path);
+  // auto_buff::SmallTarget buff_small_target;
+  // auto_buff::BigTarget buff_big_target;
+  // auto_buff::Aimer buff_aimer(config_path);
 
   cv::Mat img;
   Eigen::Quaterniond q;
@@ -70,6 +72,8 @@ int main(int argc, char * argv[])
   auto plan_thread = std::thread([&]() {
     auto t0 = std::chrono::steady_clock::now();
     uint16_t last_bullet_count = 0;
+    int plan_frame_count = 0;
+    auto plan_last_time = std::chrono::steady_clock::now();
 
     while (!quit) {
       if (!target_queue.empty() && mode == io::GimbalMode::AUTO_AIM) {
@@ -77,15 +81,35 @@ int main(int argc, char * argv[])
         auto gs = gimbal.state();
         auto plan = planner.plan(target, gs.bullet_speed);
 
+        auto expected_enemy_color = gs.is_enemy_red ? auto_aim::Color::red : auto_aim::Color::blue;
+        if (tracker.enemy_color() != expected_enemy_color) {
+          tracker.set_enemy_color(expected_enemy_color);
+          tools::logger()->info(
+            "[plan_thread] Correct enemy color to {} (from gimbal state)",
+            auto_aim::COLORS[expected_enemy_color]);
+        }
+
         gimbal.send(
           plan.control, plan.fire, plan.yaw, plan.yaw_vel, plan.yaw_acc, plan.pitch, plan.pitch_vel,
           plan.pitch_acc);
 
-        std::this_thread::sleep_for(10ms);
+        std::this_thread::sleep_for(4ms);
       } else
         std::this_thread::sleep_for(200ms);
+
+      plan_frame_count++;
+      if (plan_frame_count % 200 == 0) {
+        auto now = std::chrono::steady_clock::now();
+        auto dt = tools::delta_time(now, plan_last_time);
+        auto fps = 200.0 / dt;
+        tools::logger()->info("[plan_thread] FPS: {:.2f}", fps);
+        plan_last_time = now;
+      }
     }
   });
+
+  int main_frame_count = 0;
+  auto main_last_time = std::chrono::steady_clock::now();
 
   while (!exiter.exit()) {
     mode = gimbal.mode();
@@ -98,43 +122,53 @@ int main(int argc, char * argv[])
     camera.read(img, t);
     auto q = gimbal.q(t);
     auto gs = gimbal.state();
-    recorder.record(img, q, t);
+    //recorder.record(img, q, t);
     solver.set_R_gimbal2world(q);
 
     /// 自瞄
     if (mode.load() == io::GimbalMode::AUTO_AIM) {
       auto armors = yolo.detect(img);
+      // auto armors = detector.detect(img, main_frame_count);
       auto targets = tracker.track(armors, t);
       if (!targets.empty())
         target_queue.push(targets.front());
       else
         target_queue.push(std::nullopt);
-    }
+    // }
 
     /// 打符
-    else if (mode.load() == io::GimbalMode::SMALL_BUFF || mode.load() == io::GimbalMode::BIG_BUFF) {
-      buff_solver.set_R_gimbal2world(q);
+    // else if (mode.load() == io::GimbalMode::SMALL_BUFF || mode.load() == io::GimbalMode::BIG_BUFF) {
+    //   buff_solver.set_R_gimbal2world(q);
 
-      auto power_runes = buff_detector.detect(img);
+    //   auto power_runes = buff_detector.detect(img);
 
-      buff_solver.solve(power_runes);
+    //   buff_solver.solve(power_runes);
 
-      auto_aim::Plan buff_plan;
-      if (mode.load() == io::GimbalMode::SMALL_BUFF) {
-        buff_small_target.get_target(power_runes, t);
-        auto target_copy = buff_small_target;
-        buff_plan = buff_aimer.mpc_aim(target_copy, t, gs, true);
-      } else if (mode.load() == io::GimbalMode::BIG_BUFF) {
-        buff_big_target.get_target(power_runes, t);
-        auto target_copy = buff_big_target;
-        buff_plan = buff_aimer.mpc_aim(target_copy, t, gs, true);
-      }
-      gimbal.send(
-        buff_plan.control, buff_plan.fire, buff_plan.yaw, buff_plan.yaw_vel, buff_plan.yaw_acc,
-        buff_plan.pitch, buff_plan.pitch_vel, buff_plan.pitch_acc);
+    //   auto_aim::Plan buff_plan;
+    //   if (mode.load() == io::GimbalMode::SMALL_BUFF) {
+    //     buff_small_target.get_target(power_runes, t);
+    //     auto target_copy = buff_small_target;
+    //     buff_plan = buff_aimer.mpc_aim(target_copy, t, gs, true);
+    //   } else if (mode.load() == io::GimbalMode::BIG_BUFF) {
+    //     buff_big_target.get_target(power_runes, t);
+    //     auto target_copy = buff_big_target;
+    //     buff_plan = buff_aimer.mpc_aim(target_copy, t, gs, true);
+    //   }
+    //   gimbal.send(
+    //     buff_plan.control, buff_plan.fire, buff_plan.yaw, buff_plan.yaw_vel, buff_plan.yaw_acc,
+    //     buff_plan.pitch, buff_plan.pitch_vel, buff_plan.pitch_acc);
 
     } else
       gimbal.send(false, false, 0, 0, 0, 0, 0, 0);
+
+    main_frame_count++;
+    if (main_frame_count % 200 == 0) {
+      auto now = std::chrono::steady_clock::now();
+      auto dt = tools::delta_time(now, main_last_time);
+      auto fps = 200.0 / dt;
+      tools::logger()->info("[main_thread] FPS: {:.2f}", fps);
+      main_last_time = now;
+    }
   }
 
   quit = true;

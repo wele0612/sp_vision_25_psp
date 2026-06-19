@@ -69,6 +69,8 @@ struct GimbalState
   float pitch_vel;
   float bullet_speed;
   uint16_t bullet_count;
+
+  bool is_enemy_red;
 };
 
 class Gimbal
