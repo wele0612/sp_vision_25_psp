@@ -105,6 +105,8 @@ int main(int argc, char * argv[])
     data["t"] = tools::delta_time(t, t0);
     data["forward_vel"] = forward_vel;
     data["leftward_vel"] = leftward_vel;
+    data["self_HP"] = state.self_HP;
+    data["match_started"] = state.match_started ? 1 : 0;
     plotter.plot(data);
 
     std::this_thread::sleep_for(9ms);

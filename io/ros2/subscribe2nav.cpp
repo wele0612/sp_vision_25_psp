@@ -35,7 +35,7 @@ void Subscribe2Nav::twist_callback(const geometry_msgs::msg::Twist::SharedPtr ms
     if (twist_timer_) {
       twist_timer_->cancel();
     }
-    twist_timer_ = this->create_wall_timer(std::chrono::milliseconds(1500), [this]() {
+    twist_timer_ = this->create_wall_timer(std::chrono::milliseconds(600), [this]() {
       twist_queue_.clear();
       twist_counter_ = 0;
       RCLCPP_INFO(

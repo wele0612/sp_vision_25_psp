@@ -16,7 +16,7 @@ namespace io
 {
 struct __attribute__((packed)) GimbalToVision
 {
-  uint8_t head[2] = {'S', 'P'};
+  uint8_t head[2]; // Must be {'S', 'P'};
   uint8_t mode;  // 0: 空闲, 1: 自瞄, 2: 小符, 3: 大符
   uint8_t aim_color; // 自瞄识别目标色 0:Blue  1:Red
   float q[4];    // wxyz顺序
@@ -26,6 +26,10 @@ struct __attribute__((packed)) GimbalToVision
   float pitch_vel;
   float bullet_speed;
   uint16_t bullet_count;  // 子弹累计发送次数
+
+  uint16_t self_HP;
+  uint8_t match_started;
+
   uint16_t crc16;
 };
 
@@ -71,6 +75,10 @@ struct GimbalState
   uint16_t bullet_count;
 
   bool is_enemy_red;
+
+  uint16_t self_HP;
+  bool match_started;
+
 };
 
 class Gimbal

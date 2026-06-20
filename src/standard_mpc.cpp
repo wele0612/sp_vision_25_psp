@@ -4,6 +4,7 @@
 
 #include "io/camera.hpp"
 #include "io/dm_imu/dm_imu.hpp"
+#include "io/ros2/ros2.hpp"
 #include "tasks/auto_aim/aimer.hpp"
 #include "tasks/auto_aim/multithread/commandgener.hpp"
 #include "tasks/auto_aim/multithread/mt_detector.hpp"
@@ -44,6 +45,8 @@ int main(int argc, char * argv[])
 
   io::Gimbal gimbal(config_path);
   io::Camera camera(config_path);
+  io::ROS2 ros2;
+
 
   auto_aim::YOLO yolo(config_path, true);
   auto_aim::Detector detector(config_path, true);
@@ -75,6 +78,9 @@ int main(int argc, char * argv[])
     int plan_frame_count = 0;
     auto plan_last_time = std::chrono::steady_clock::now();
 
+    float forward_vel = 0;
+    float leftward_vel = 0;
+
     while (!quit) {
       if (!target_queue.empty() && mode == io::GimbalMode::AUTO_AIM) {
         auto target = target_queue.front();
@@ -89,9 +95,19 @@ int main(int argc, char * argv[])
             auto_aim::COLORS[expected_enemy_color]);
         }
 
+        // read twist from ros2
+        auto twist = ros2.subscribe_twist();
+        if (twist.size() == 2) {
+          forward_vel = twist[0];
+          leftward_vel = twist[1];
+        } else {
+          forward_vel = 0;
+          leftward_vel = 0;
+        }
+
         gimbal.send(
           plan.control, plan.fire, plan.yaw, plan.yaw_vel, plan.yaw_acc, plan.pitch, plan.pitch_vel,
-          plan.pitch_acc);
+          plan.pitch_acc, forward_vel, leftward_vel, 0);
 
         std::this_thread::sleep_for(4ms);
       } else
