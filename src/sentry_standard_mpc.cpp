@@ -1,9 +1,11 @@
 #include <chrono>
 #include <opencv2/opencv.hpp>
 #include <thread>
+#include <sentry_msg/msg/sentry_msg.hpp>
 
 #include "io/camera.hpp"
 #include "io/dm_imu/dm_imu.hpp"
+#include "io/ros2/ros2.hpp"
 #include "tasks/auto_aim/aimer.hpp"
 #include "tasks/auto_aim/multithread/commandgener.hpp"
 #include "tasks/auto_aim/multithread/mt_detector.hpp"
@@ -44,6 +46,7 @@ int main(int argc, char * argv[])
 
   io::Gimbal gimbal(config_path);
   io::Camera camera(config_path);
+  io::ROS2 ros2;
 
 
   auto_aim::YOLO yolo(config_path, true);
@@ -79,6 +82,8 @@ int main(int argc, char * argv[])
     float forward_vel = 0;
     float leftward_vel = 0;
 
+    sentry_msg::msg::SentryMsg data;
+
     while (!quit) {
       if (!target_queue.empty() && mode == io::GimbalMode::AUTO_AIM) {
         auto target = target_queue.front();
@@ -92,6 +97,20 @@ int main(int argc, char * argv[])
             "[plan_thread] Correct enemy color to {} (from gimbal state)",
             auto_aim::COLORS[expected_enemy_color]);
         }
+
+        // read twist from ros2
+        auto twist = ros2.subscribe_twist();
+        if (twist.size() == 2) {
+          forward_vel = twist[0];
+          leftward_vel = twist[1];
+        } else {
+          forward_vel = 0;
+          leftward_vel = 0;
+        }
+
+        data.self_hp = gs.self_HP;
+        data.match_started = gs.match_started;
+        ros2.publish(data);
 
         gimbal.send(
           plan.control, plan.fire, plan.yaw, plan.yaw_vel, plan.yaw_acc, plan.pitch, plan.pitch_vel,

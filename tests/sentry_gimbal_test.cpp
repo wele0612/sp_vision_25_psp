@@ -1,4 +1,6 @@
 #include "io/gimbal/gimbal.hpp"
+#include "io/ros2/ros2.hpp"
+#include <sentry_msg/msg/sentry_msg.hpp>
 
 #include <chrono>
 #include <opencv2/opencv.hpp>
@@ -30,6 +32,7 @@ int main(int argc, char * argv[])
   tools::Plotter plotter;
 
   io::Gimbal gimbal(config_path);
+  io::ROS2 ros2;
 
   auto t0 = std::chrono::steady_clock::now();
   auto last_mode = gimbal.mode();
@@ -43,6 +46,7 @@ int main(int argc, char * argv[])
   float forward_vel = 0;
   float leftward_vel = 0;
 
+  sentry_msg::msg::SentryMsg data;
 
   while (!exiter.exit()) {
     auto mode = gimbal.mode();
@@ -77,6 +81,20 @@ int main(int argc, char * argv[])
       first_fired = false;
     }
     fire_count++;
+
+    // read twist from ros2
+    auto twist = ros2.subscribe_twist();
+    if (twist.size() == 2) {
+      forward_vel = twist[0];
+      leftward_vel = twist[1];
+    } else {
+      forward_vel = 0;
+      leftward_vel = 0;
+    }
+
+    data.self_hp = state.self_HP;
+    data.match_started = state.match_started;
+    ros2.publish(data);
 
     gimbal.send(true, test_fire && fire, 1, 0, 0, 0, 0, 0, forward_vel, leftward_vel, 0);
 

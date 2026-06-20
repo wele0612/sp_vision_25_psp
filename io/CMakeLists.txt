@@ -38,18 +38,17 @@ endif()
 target_link_libraries(io MvCameraControl MVSDK usb-1.0 yaml-cpp serial)
 
 ################## 检查 ROS 环境 ##################
-find_package(ament_cmake QUIET)
-find_package(rclcpp QUIET)
-find_package(std_msgs QUIET)
-find_package(geometry_msgs QUIET)
-find_package(sentry_msg QUIET)
-find_package(fastcdr QUIET)
-find_package(rosidl_typesupport_cpp QUIET)
+if(DEFINED ENV{ROS_DISTRO} AND NOT "$ENV{ROS_DISTRO}" STREQUAL "")
+    find_package(ament_cmake QUIET)
+    find_package(rclcpp QUIET)
+    find_package(std_msgs QUIET)
+    find_package(geometry_msgs QUIET)
+    find_package(sentry_msg QUIET)
+    find_package(fastcdr QUIET)
+    find_package(rosidl_typesupport_cpp QUIET)
+endif()
 
-# 如果找不到 ROS 环境，则跳过 ROS 相关的部分
-if(NOT ament_cmake_FOUND OR NOT rclcpp_FOUND OR NOT std_msgs_FOUND OR NOT geometry_msgs_FOUND OR NOT sentry_msg_FOUND OR NOT fastcdr_FOUND OR NOT rosidl_typesupport_cpp_FOUND)
-    message(WARNING "ROS2 not found, skipping ROS2 specific code.")
-else()
+if(ament_cmake_FOUND AND rclcpp_FOUND AND std_msgs_FOUND AND geometry_msgs_FOUND AND sentry_msg_FOUND AND fastcdr_FOUND AND rosidl_typesupport_cpp_FOUND)
     message(STATUS "ROS2 environment found, compiling ROS2-related code.")
     
     # 添加 ROS2 相关的文件
@@ -57,4 +56,6 @@ else()
 
     # 设置 ROS2 依赖
     ament_target_dependencies(io rclcpp std_msgs geometry_msgs sentry_msg)
+else()
+    message(STATUS "ROS2 environment not found, skipping ROS2 specific code.")
 endif()
