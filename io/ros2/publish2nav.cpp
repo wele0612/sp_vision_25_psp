@@ -13,6 +13,7 @@ namespace io
 Publish2Nav::Publish2Nav() : Node("auto_aim_target_pos_publisher")
 {
   publisher_ = this->create_publisher<std_msgs::msg::String>("auto_aim_target_pos", 10);
+  state_publisher_ = this->create_publisher<std_msgs::msg::String>("sentry_state", 10);
 
   RCLCPP_INFO(this->get_logger(), "auto_aim_target_pos_publisher node initialized.");
 }
@@ -33,6 +34,22 @@ void Publish2Nav::send_data(const Eigen::Vector4d & target_pos)
 
   // 发布消息
   publisher_->publish(*message);
+
+  // RCLCPP_INFO(
+  //   this->get_logger(), "auto_aim_target_pos_publisher node sent message: '%s'",
+  //   message->data.c_str());
+}
+
+void Publish2Nav::send_data(const sentry_msg::msg::SentryMsg & data)
+{
+  // 创建消息
+  auto message = std::make_shared<std_msgs::msg::String>();
+
+  // 将 sentry_msg::msg::SentryMsg 数据转换为字符串并存储在消息中
+  message->data = std::to_string(data.self_hp) + "," + std::to_string(data.match_started);
+
+  // 发布消息
+  state_publisher_->publish(*message);
 
   // RCLCPP_INFO(
   //   this->get_logger(), "auto_aim_target_pos_publisher node sent message: '%s'",

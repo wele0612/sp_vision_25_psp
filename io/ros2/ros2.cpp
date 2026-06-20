@@ -23,6 +23,7 @@ ROS2::~ROS2()
 
 void ROS2::publish(const Eigen::Vector4d & target_pos) { publish2nav_->send_data(target_pos); }
 
+void ROS2::publish(const sentry_msg::msg::SentryMsg & data) { publish2nav_->send_data(data); }
 
 std::vector<float> ROS2::subscribe_twist()
 {

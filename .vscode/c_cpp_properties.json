@@ -12,6 +12,7 @@
                 "/usr/include/eigen3",
                 "/opt/intel/openvino_2023.3.0/runtime/include/",
                 "/home/rm/sp_msg_25/install/sp_msgs/include/sp_msgs",
+                "/home/xli/test_ws/install/sentry_msg/include/sentry_msg",
                 "/opt/ros/humble/include/**"
             ],
             "compilerPath": "/usr/bin/gcc",

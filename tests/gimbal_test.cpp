@@ -1,5 +1,6 @@
 #include "io/gimbal/gimbal.hpp"
 #include "io/ros2/ros2.hpp"
+#include <sentry_msg/msg/sentry_msg.hpp>
 
 #include <chrono>
 #include <opencv2/opencv.hpp>
@@ -45,6 +46,8 @@ int main(int argc, char * argv[])
   float forward_vel = 0;
   float leftward_vel = 0;
 
+  sentry_msg::msg::SentryMsg data;
+
   while (!exiter.exit()) {
     auto mode = gimbal.mode();
 
@@ -88,6 +91,10 @@ int main(int argc, char * argv[])
       forward_vel = 0;
       leftward_vel = 0;
     }
+
+    data.self_hp = state.self_HP;
+    data.match_started = state.match_started ? 1 : 0;
+    ros2.publish(data);
 
     gimbal.send(true, test_fire && fire, 1, 0, 0, 0, 0, 0, forward_vel, leftward_vel, 0);
 

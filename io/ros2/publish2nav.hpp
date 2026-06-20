@@ -11,6 +11,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
+#include <sentry_msg/msg/sentry_msg.hpp>
 
 namespace io
 {
@@ -25,9 +26,12 @@ public:
 
   void send_data(const Eigen::Vector4d & data);
 
+  void send_data(const sentry_msg::msg::SentryMsg & data);
+
 private:
   // ROS2 发布者
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr state_publisher_;
 };
 
 }  // namespace io

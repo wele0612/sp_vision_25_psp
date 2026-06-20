@@ -14,6 +14,7 @@ public:
   ~ROS2();
 
   void publish(const Eigen::Vector4d & target_pos);
+  void publish(const sentry_msg::msg::SentryMsg & data);
 
   std::vector<float> subscribe_twist();
 

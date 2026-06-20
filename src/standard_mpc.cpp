@@ -175,7 +175,7 @@ int main(int argc, char * argv[])
     //     buff_plan.pitch, buff_plan.pitch_vel, buff_plan.pitch_acc);
 
     } else
-      gimbal.send(false, false, 0, 0, 0, 0, 0, 0);
+      gimbal.send(false, false, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
     main_frame_count++;
     if (main_frame_count % 200 == 0) {
@@ -189,7 +189,7 @@ int main(int argc, char * argv[])
 
   quit = true;
   if (plan_thread.joinable()) plan_thread.join();
-  gimbal.send(false, false, 0, 0, 0, 0, 0, 0);
+  gimbal.send(false, false, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
   return 0;
 }

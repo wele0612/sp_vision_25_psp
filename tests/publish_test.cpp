@@ -2,6 +2,7 @@
 #include <thread>
 
 #include "io/ros2/ros2.hpp"
+#include <sentry_msg/msg/sentry_msg.hpp>
 #include "tasks/auto_aim/armor.hpp"
 #include "tools/exiter.hpp"
 #include "tools/logger.hpp"
@@ -13,7 +14,9 @@ int main(int argc, char ** argv)
 
   double i = 0;
   while (!exiter.exit()) {
-    Eigen::Vector4d data{i, i + 1, 1, auto_aim::ArmorName::sentry + 1};
+    sentry_msg::msg::SentryMsg data;
+    data.self_hp = i + 1;
+    data.match_started = 0;
     ros2.publish(data);
     i++;
 
