@@ -93,7 +93,7 @@ int main(int argc, char * argv[])
     }
 
     data.self_hp = state.self_HP;
-    data.match_started = state.match_started ? 1 : 0;
+    data.match_started = state.match_started;
     ros2.publish(data);
 
     gimbal.send(true, test_fire && fire, 1, 0, 0, 0, 0, 0, forward_vel, leftward_vel, 0);

@@ -1,6 +1,7 @@
 #include <chrono>
 #include <opencv2/opencv.hpp>
 #include <thread>
+#include <sentry_msg/msg/sentry_msg.hpp>
 
 #include "io/camera.hpp"
 #include "io/dm_imu/dm_imu.hpp"
@@ -81,6 +82,8 @@ int main(int argc, char * argv[])
     float forward_vel = 0;
     float leftward_vel = 0;
 
+    sentry_msg::msg::SentryMsg data;
+
     while (!quit) {
       if (!target_queue.empty() && mode == io::GimbalMode::AUTO_AIM) {
         auto target = target_queue.front();
@@ -104,6 +107,10 @@ int main(int argc, char * argv[])
           forward_vel = 0;
           leftward_vel = 0;
         }
+
+        data.self_hp = gs.self_HP;
+        data.match_started = gs.match_started;
+        ros2.publish(data);
 
         gimbal.send(
           plan.control, plan.fire, plan.yaw, plan.yaw_vel, plan.yaw_acc, plan.pitch, plan.pitch_vel,
