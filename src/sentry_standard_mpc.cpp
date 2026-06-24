@@ -117,8 +117,27 @@ int main(int argc, char * argv[])
           plan.pitch_acc, forward_vel, leftward_vel, 0);
 
         std::this_thread::sleep_for(4ms);
-      } else
-        std::this_thread::sleep_for(200ms);
+      } else {
+        auto gs = gimbal.state();
+        // read twist from ros2
+        auto twist = ros2.subscribe_twist();
+        if (twist.size() == 2) {
+          forward_vel = twist[0];
+          leftward_vel = twist[1];
+        } else {
+          forward_vel = 0;
+          leftward_vel = 0;
+        }
+
+        data.self_hp = gs.self_HP;
+        data.match_started = gs.match_started;
+        ros2.publish(data);
+
+        gimbal.send(
+          false, false, 0, 0, 0, 0, 0, 0, forward_vel, leftward_vel, 0);
+
+        std::this_thread::sleep_for(4ms);
+      }
 
       plan_frame_count++;
       if (plan_frame_count % 200 == 0) {
@@ -181,8 +200,7 @@ int main(int argc, char * argv[])
     //     buff_plan.control, buff_plan.fire, buff_plan.yaw, buff_plan.yaw_vel, buff_plan.yaw_acc,
     //     buff_plan.pitch, buff_plan.pitch_vel, buff_plan.pitch_acc);
 
-    } else
-      gimbal.send(false, false, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+    } 
 
     main_frame_count++;
     if (main_frame_count % 200 == 0) {
