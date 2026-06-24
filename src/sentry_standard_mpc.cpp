@@ -85,6 +85,7 @@ int main(int argc, char * argv[])
     sentry_msg::msg::SentryMsg data;
 
     while (!quit) {
+      auto gs = gimbal.state();
       auto twist = ros2.subscribe_twist();
       if (twist.size() == 2) {
         forward_vel = twist[0];
