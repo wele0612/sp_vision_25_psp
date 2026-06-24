@@ -4,6 +4,7 @@ enemy_color: "blue"
 com_port: "/dev/ttyUSB0"
 baudrate: 921600
 timeout_ms: 5
+
 #####-----神经网络参数-----#####
 yolo_name: yolo11
 classify_model: assets/tiny_resnet.onnx
@@ -53,11 +54,6 @@ max_side_ratio: 1.5
 max_rectangular_error: 25 # degree
 min_confidence: 0.8
 
-#####-----cboard参数-----#####
-quaternion_canid: 0x01
-bullet_speed_canid: 0x110
-send_canid: 0xff
-can_interface: "can0"
 
 #####-----tracker参数-----#####
 min_detect_count: 5
@@ -65,15 +61,15 @@ max_temp_lost_count: 25
 outpost_max_temp_lost_count: 75
 
 #####-----aimer参数-----#####
-yaw_offset: -0.8 # degree -2.5
-pitch_offset: -1  # degree 2
-comming_angle: 60 # degree
+yaw_offset: -0.3 # degree -2.5
+pitch_offset: 0.6  # degree 2
+comming_angle: 80 # degree
 leaving_angle: 20 # degree
 left_yaw_offset: -1
 right_yaw_offset: -0.6
 decision_speed: 10 # rad/s
-high_speed_delay_time: 0.026 # s
-low_speed_delay_time: 0.010 # s
+high_speed_delay_time: 0.012 # s
+low_speed_delay_time: 0.012 # s
 
 #####-----shooter参数-----#####
 first_tolerance: 5 # 近距离射击容差，degree
@@ -81,18 +77,28 @@ second_tolerance: 2 # 远距离射击容差，degree
 judge_distance: 3 #距离判断阈值
 auto_fire: true # 是否由自瞄控制射击
 
+#####-----planner-----#####
+fire_thresh: 0.0035
+
+max_yaw_acc: 40
+Q_yaw: [9e6, 0]
+R_yaw: [1]
+
+max_pitch_acc: 70
+Q_pitch: [9e6, 0]
+R_pitch: [1]
+
+
 #####-----decider参数-----#####
 mode: 1
 
 #####-----工业相机标定参数-----#####
 R_gimbal2imubody: [1, 0, 0, 0, 1, 0, 0, 0, 1]
 
-# 重投影误差: 0.1833px
-camera_matrix: [2414.9359264386621, 0, 717.26243105567414, 0, 2418.0489262208148, 582.68540529942845, 0, 0, 1]
-distort_coeffs: [-0.0209453389287673, 0.15028138841073832, -0.0006517722113234505, -0.0016861906197686788, 0]
+# 重投影误差: 0.5784px
+camera_matrix: [1825.2468865313263, 0, 716.82089757921938, 0, 1825.1855359971178, 568.03590028260135, 0, 0, 1]
+distort_coeffs: [-0.105812884809336, 0.33994078037055991, 0.0016138353430351251, 0.0003142461768261155, 0]
 
-# 相机同理想情况的偏角: yaw-1.11 pitch0.01 roll-0.06 degree
-# 标定板到世界坐标系原点的水平距离: 1.20 m
-# 标定板同竖直摆放时的偏角: yaw123.89 pitch14.05 roll-0.86 degree
-R_camera2gimbal: [0.01928451708725664, 0.00012696140743255463, 0.99981402834802846, -0.99981344688553653, -0.0010834913551969569, 0.019284643459122196, 0.0010857382619952124, -0.99999940496346484, 0.00010604311483339372]
-t_camera2gimbal: [0.13089617453251859, 0.0038468007459533785, 0.094139945222010288]
+# 相机同理想情况的偏角: yaw-0.87 pitch-0.24 roll3.35 degree
+R_camera2gimbal: [0.0148968229435118, -0.005026291769933966, 0.99987640289049395, -0.99818263949295227, 0.058321934499634409, 0.015164767426616321, -0.058390948622818795, -0.99828517385928561, -0.0041483456538102814]
+t_camera2gimbal: [0.024557689630816108, -0.0041643704179828017, 0.093820072637546686]
