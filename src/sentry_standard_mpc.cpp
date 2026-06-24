@@ -85,6 +85,19 @@ int main(int argc, char * argv[])
     sentry_msg::msg::SentryMsg data;
 
     while (!quit) {
+      auto twist = ros2.subscribe_twist();
+      if (twist.size() == 2) {
+        forward_vel = twist[0];
+        leftward_vel = twist[1];
+      } else {
+        forward_vel = 0;
+        leftward_vel = 0;
+      }
+
+      data.self_hp = gs.self_HP;
+      data.match_started = gs.match_started;
+      ros2.publish(data);
+
       if (!target_queue.empty() && mode == io::GimbalMode::AUTO_AIM) {
         auto target = target_queue.front();
         auto gs = gimbal.state();
@@ -97,46 +110,16 @@ int main(int argc, char * argv[])
             "[plan_thread] Correct enemy color to {} (from gimbal state)",
             auto_aim::COLORS[expected_enemy_color]);
         }
-
-        // read twist from ros2
-        auto twist = ros2.subscribe_twist();
-        if (twist.size() == 2) {
-          forward_vel = twist[0];
-          leftward_vel = twist[1];
-        } else {
-          forward_vel = 0;
-          leftward_vel = 0;
-        }
-
-        data.self_hp = gs.self_HP;
-        data.match_started = gs.match_started;
-        ros2.publish(data);
-
+        
         gimbal.send(
           plan.control, plan.fire, plan.yaw, plan.yaw_vel, plan.yaw_acc, plan.pitch, plan.pitch_vel,
           plan.pitch_acc, forward_vel, leftward_vel, 0);
 
-        std::this_thread::sleep_for(4ms);
       } else {
-        auto gs = gimbal.state();
-        // read twist from ros2
-        auto twist = ros2.subscribe_twist();
-        if (twist.size() == 2) {
-          forward_vel = twist[0];
-          leftward_vel = twist[1];
-        } else {
-          forward_vel = 0;
-          leftward_vel = 0;
-        }
-
-        data.self_hp = gs.self_HP;
-        data.match_started = gs.match_started;
-        ros2.publish(data);
 
         gimbal.send(
           false, false, 0, 0, 0, 0, 0, 0, forward_vel, leftward_vel, 0);
 
-        std::this_thread::sleep_for(4ms);
       }
 
       plan_frame_count++;
@@ -147,6 +130,8 @@ int main(int argc, char * argv[])
         tools::logger()->info("[plan_thread] FPS: {:.2f}", fps);
         plan_last_time = now;
       }
+
+      std::this_thread::sleep_for(4ms);
     }
   });
 
