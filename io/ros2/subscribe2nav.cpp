@@ -13,7 +13,7 @@ Subscribe2Nav::Subscribe2Nav()
 {
 
   twist_subscription_ = this->create_subscription<geometry_msgs::msg::Twist>(
-    "/cmd_vel_smoothed", 10,
+    "/aft_cmd_vel", 10,
     std::bind(&Subscribe2Nav::twist_callback, this, std::placeholders::_1));
 
   RCLCPP_INFO(this->get_logger(), "nav_subscriber node initialized.");
