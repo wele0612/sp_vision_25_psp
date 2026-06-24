@@ -31,7 +31,7 @@ public:
 private:
   // ROS2 发布者
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher_;
-  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr state_publisher_;
+  rclcpp::Publisher<sentry_msg::msg::SentryMsg>::SharedPtr state_publisher_;
 };
 
 }  // namespace io
