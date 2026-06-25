@@ -77,8 +77,9 @@ IMU型号：使用C板内置BMI088作为IMU\
 
 2. 编译：
     ```bash
+    source /opt/intel/openvino_2025/setupvars.sh
     cmake -B build
-    make -C build/ -j`nproc`
+    make -C build/ -j10
     ```
 
 3. 运行demo:
