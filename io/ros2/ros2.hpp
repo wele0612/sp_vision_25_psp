@@ -18,6 +18,12 @@ public:
 
   std::vector<float> subscribe_twist();
 
+  // 订阅状态消息，返回状态值
+  // 0: no slow down
+  // 1: 0.5 slow down
+  // 2: stop
+  int state_subscribe_();
+
   template <typename T>
   std::shared_ptr<rclcpp::Publisher<T>> create_publisher(
     const std::string & node_name, const std::string & topic_name, size_t queue_size)

@@ -30,4 +30,9 @@ std::vector<float> ROS2::subscribe_twist()
   return subscribe2nav_->subscribe_twist();
 }
 
+int ROS2::state_subscribe_()
+{
+  return subscribe2nav_->state_subscribe_();
+}
+
 }  // namespace io

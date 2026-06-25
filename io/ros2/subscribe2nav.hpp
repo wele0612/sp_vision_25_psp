@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "geometry_msgs/msg/twist.hpp"
+#include "std_msgs/msg/int32.hpp"
 #include "tools/thread_safe_queue.hpp"
 
 namespace io
@@ -21,8 +22,12 @@ public:
 
   std::vector<float> subscribe_twist();
 
+  int state_subscribe_();
+
 private:
   void twist_callback(const geometry_msgs::msg::Twist::SharedPtr msg);
+
+  void state_callback(const std_msgs::msg::Int32::SharedPtr msg);
 
   int twist_counter_;
 
@@ -30,7 +35,11 @@ private:
 
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr twist_subscription_;
 
+  rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr state_subscription_;
+
   tools::ThreadSafeQueue<geometry_msgs::msg::Twist> twist_queue_;
+
+  tools::ThreadSafeQueue<std_msgs::msg::Int32> state_queue_;
 };
 }  // namespace io
 

@@ -111,6 +111,15 @@ int main(int argc, char * argv[])
             "[plan_thread] Correct enemy color to {} (from gimbal state)",
             auto_aim::COLORS[expected_enemy_color]);
         }
+
+        int is_slow = ros2.state_subscribe_();
+        if (is_slow == 1) {
+          forward_vel *= 0.5;
+          leftward_vel *= 0.5;
+        } else if (is_slow == 2) {
+          forward_vel = 0.0;
+          leftward_vel = 0.0;
+        }
         
         gimbal.send(
           plan.control, plan.fire, plan.yaw, plan.yaw_vel, plan.yaw_acc, plan.pitch, plan.pitch_vel,

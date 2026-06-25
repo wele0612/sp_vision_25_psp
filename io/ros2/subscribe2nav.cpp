@@ -9,12 +9,17 @@ namespace io
 Subscribe2Nav::Subscribe2Nav()
 : Node("nav_subscriber"),
   twist_queue_(1),
+  state_queue_(1),
   twist_counter_(0)
 {
 
   twist_subscription_ = this->create_subscription<geometry_msgs::msg::Twist>(
     "/aft_cmd_vel", 10,
     std::bind(&Subscribe2Nav::twist_callback, this, std::placeholders::_1));
+
+  state_subscription_ = this->create_subscription<std_msgs::msg::Int32>(
+    "/slow_state", 10,
+    std::bind(&Subscribe2Nav::state_callback, this, std::placeholders::_1));
 
   RCLCPP_INFO(this->get_logger(), "nav_subscriber node initialized.");
 }
@@ -44,6 +49,12 @@ void Subscribe2Nav::twist_callback(const geometry_msgs::msg::Twist::SharedPtr ms
   }
 }
 
+void Subscribe2Nav::state_callback(const std_msgs::msg::Int32::SharedPtr msg)
+{
+  state_queue_.clear();
+  state_queue_.push(*msg);
+}
+
 void Subscribe2Nav::start()
 {
   RCLCPP_INFO(this->get_logger(), "nav_subscriber node Starting to spin...");
@@ -60,6 +71,18 @@ std::vector<float> Subscribe2Nav::subscribe_twist()
   twist_queue_.back(msg);
 
   return {static_cast<float>(msg.linear.x), static_cast<float>(msg.linear.y)};
+}
+
+int Subscribe2Nav::state_subscribe_()
+{
+  if (state_queue_.empty()) {
+    return 0;
+  }
+  std_msgs::msg::Int32 msg;
+
+  state_queue_.back(msg);
+
+  return msg.data;
 }
 
 }  // namespace io
